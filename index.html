@@ -1,0 +1,1923 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>FreeMusic v3.0 - 免费音乐搜索下载</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-dark: #0d0d1a;
+            --bg-medium: #151528;
+            --bg-light: #1e1e3a;
+            --accent: #e94560;
+            --accent-hover: #ff6b81;
+            --accent-glow: rgba(233, 69, 96, 0.3);
+            --text-primary: #ffffff;
+            --text-secondary: #8888aa;
+            --success: #2ecc71;
+            --card-bg: #1a1a35;
+            --border-color: rgba(255,255,255,0.06);
+        }
+
+        body {
+            font-family: 'Microsoft YaHei UI', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            touch-action: manipulation;
+            overscroll-behavior: none;
+        }
+
+        .app {
+            position: relative;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        .view {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+            will-change: transform, opacity;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+
+        .view-main {
+            position: relative;
+            opacity: 1;
+            z-index: 1;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 24px 20px 100px;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 28px;
+            padding-top: 16px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #e94560, #ff6b81, #e94560);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 1px;
+        }
+
+        .header .subtitle {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-top: 6px;
+        }
+
+        .source-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .source-btn {
+            padding: 10px 22px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 24px;
+            background: var(--bg-medium);
+            color: var(--text-secondary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .source-btn:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+        }
+
+        .source-btn.active {
+            background: linear-gradient(135deg, var(--accent), #c0392b);
+            border-color: transparent;
+            color: #fff;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 14px 20px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 28px;
+            background: var(--bg-medium);
+            color: var(--text-primary);
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent);
+        }
+
+        .search-box input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .search-box button {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 28px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-search {
+            background: linear-gradient(135deg, var(--accent), #c0392b);
+            color: var(--text-primary);
+            box-shadow: 0 4px 16px var(--accent-glow);
+        }
+
+        .btn-search:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px var(--accent-glow);
+        }
+
+        .btn-trending {
+            background: var(--bg-light);
+            color: var(--text-primary);
+        }
+
+        .btn-trending:hover {
+            background: var(--accent);
+        }
+
+        .status-bar {
+            padding: 10px 16px;
+            background: var(--bg-medium);
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .track-list {
+            background: var(--bg-medium);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .track-header {
+            display: grid;
+            grid-template-columns: 32px 30px 1fr 100px 70px 70px;
+            padding: 12px 16px;
+            background: var(--bg-light);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .track-item {
+            display: grid;
+            grid-template-columns: 32px 30px 1fr 100px 70px 70px;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.15s;
+            align-items: center;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .track-item:last-child {
+            border-bottom: none;
+        }
+
+        .track-item:hover {
+            background: rgba(233, 69, 96, 0.08);
+        }
+
+        .track-item:active {
+            background: rgba(233, 69, 96, 0.18);
+        }
+
+        .track-item.playing {
+            background: rgba(233, 69, 96, 0.15);
+        }
+
+        .track-item.playing .index {
+            color: var(--accent);
+        }
+
+        .track-item .index {
+            color: var(--text-secondary);
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .track-item .col-check {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .track-item .title {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .track-item .artist {
+            color: var(--text-secondary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 13px;
+        }
+
+        .track-item .source-tag {
+            text-align: center;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            background: var(--bg-light);
+            color: var(--text-secondary);
+        }
+
+        .track-item .source-tag.netease {
+            background: rgba(233, 69, 96, 0.15);
+            color: #e94560;
+        }
+
+        .track-item .source-tag.kuwo {
+            background: rgba(255, 165, 0, 0.15);
+            color: #ffa500;
+        }
+
+        .track-item .source-tag.audius {
+            background: rgba(160, 120, 255, 0.15);
+            color: #a078ff;
+        }
+
+        .track-item .actions {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .track-item .actions button {
+            padding: 5px 12px;
+            border: none;
+            border-radius: 14px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .track-checkbox {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .batch-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+            align-items: center;
+        }
+
+        .batch-btn {
+            padding: 10px 20px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 24px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .batch-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .batch-btn:active {
+            background: rgba(233,69,96,0.1);
+        }
+
+        .batch-btn.btn-play-selected {
+            border-color: #3498db;
+            color: #3498db;
+        }
+
+        .batch-btn.btn-play-selected:hover {
+            background: rgba(52,152,219,0.1);
+        }
+
+        .batch-btn.btn-play-all {
+            border-color: #9b59b6;
+            color: #9b59b6;
+        }
+
+        .batch-btn.btn-play-all:hover {
+            background: rgba(155,89,182,0.1);
+        }
+
+        .batch-btn.btn-dl-selected {
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        .batch-btn.btn-dl-selected:hover {
+            background: rgba(46,204,113,0.1);
+        }
+
+        .batch-btn.btn-dl-all {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .batch-btn.btn-dl-all:hover {
+            background: rgba(233,69,96,0.1);
+        }
+
+        .select-all-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            margin-right: auto;
+        }
+
+        .select-all-wrap input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .selected-count {
+            font-size: 12px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .btn-play {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-play:hover {
+            background: var(--accent-hover);
+            transform: scale(1.05);
+        }
+
+        .btn-dl {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-dl:hover {
+            opacity: 0.85;
+            transform: scale(1.05);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state .icon {
+            font-size: 52px;
+            margin-bottom: 16px;
+            opacity: 0.6;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        .download-log {
+            margin-top: 16px;
+            background: var(--bg-medium);
+            border-radius: 12px;
+            padding: 14px;
+            max-height: 120px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+        }
+
+        .download-log h3 {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .log-item {
+            font-size: 12px;
+            padding: 3px 0;
+            color: var(--text-secondary);
+        }
+
+        .log-item.success { color: var(--success); }
+        .log-item.error { color: var(--accent); }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(13, 13, 26, 0.85);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--bg-light);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .daily-section {
+            margin-bottom: 20px;
+        }
+
+        .daily-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .daily-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .daily-header-left .daily-icon {
+            font-size: 24px;
+        }
+
+        .daily-header-left .daily-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .daily-header-left .daily-date {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-left: 4px;
+        }
+
+        .daily-refresh {
+            padding: 6px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .daily-refresh:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .daily-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .daily-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--bg-medium);
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.15s;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .daily-card:hover {
+            background: rgba(233, 69, 96, 0.08);
+            border-color: rgba(233, 69, 96, 0.2);
+        }
+
+        .daily-card:active {
+            background: rgba(233, 69, 96, 0.16);
+            transform: scale(0.98);
+        }
+
+        .daily-card .daily-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: var(--bg-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+
+        .daily-card:nth-child(1) .daily-num { background: linear-gradient(135deg, #e94560, #c0392b); color: #fff; }
+        .daily-card:nth-child(2) .daily-num { background: linear-gradient(135deg, #ff6b81, #e94560); color: #fff; }
+        .daily-card:nth-child(3) .daily-num { background: linear-gradient(135deg, #ffa500, #e67e22); color: #fff; }
+
+        .daily-card .daily-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .daily-card .daily-song {
+            font-size: 13px;
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .daily-card .daily-artist {
+            font-size: 11px;
+            color: var(--text-secondary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .daily-card .daily-play-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #fff;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            opacity: 0.4;
+            transition: opacity 0.15s, transform 0.1s;
+        }
+
+        .daily-card:hover .daily-play-btn {
+            opacity: 1;
+        }
+
+        .daily-card:active .daily-play-btn {
+            opacity: 1;
+            transform: scale(0.9);
+        }
+
+        @media (max-width: 768px) {
+            .daily-card .daily-play-btn {
+                opacity: 0.7;
+            }
+        }
+
+        .daily-loading {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 30px;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        @media (max-width: 500px) {
+            .daily-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .track-header, .track-item {
+                grid-template-columns: 28px 26px 1fr 70px 60px;
+            }
+            .track-header .col-source,
+            .track-item .source-tag {
+                display: none;
+            }
+            .header h1 { font-size: 26px; }
+            .container { padding: 16px 12px 100px; }
+            .source-selector { gap: 6px; }
+            .source-btn { padding: 10px 16px; font-size: 14px; }
+            .search-box button { padding: 14px 16px; }
+            .track-item .actions button { padding: 8px 14px; font-size: 13px; }
+        }
+
+        @media (max-width: 400px) {
+            .source-btn {
+                padding: 8px 14px;
+                font-size: 13px;
+            }
+            .search-box { flex-wrap: wrap; }
+            .search-box input { min-width: 0; }
+            .search-box button { flex: 1; }
+            .daily-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="view view-main" id="viewMain">
+            <div class="container">
+                <div class="header">
+                    <h1>🎵 FreeMusic</h1>
+                    <div class="subtitle">免费音乐搜索下载 · 多平台聚合</div>
+                </div>
+
+                <div class="source-selector">
+                    <button class="source-btn active" data-source="netease" onclick="setSource('netease')">☁️ 网易云</button>
+                    <button class="source-btn" data-source="kuwo" onclick="setSource('kuwo')">🎵 酷我</button>
+                    <button class="source-btn" data-source="audius" onclick="setSource('audius')">🎧 Audius</button>
+                </div>
+
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="搜索歌曲、歌手..." onkeydown="if(event.key==='Enter')doSearch()">
+                    <button class="btn-search" onclick="doSearch()">🔍 搜索</button>
+                    <button class="btn-trending" onclick="loadTrending()">🔥 热门</button>
+                </div>
+
+                <div class="status-bar" id="statusBar">就绪 - 选择音乐来源后点击"热门"或搜索歌曲</div>
+
+                <div class="daily-section" id="dailySection">
+                    <div class="daily-header">
+                        <div class="daily-header-left">
+                            <span class="daily-icon">📅</span>
+                            <span class="daily-title">每日推荐</span>
+                            <span class="daily-date" id="dailyDate"></span>
+                        </div>
+                        <button class="daily-refresh" onclick="loadDailyPlaylist()">🔄 换一批</button>
+                    </div>
+                    <div class="daily-grid" id="dailyGrid">
+                        <div class="daily-loading">正在加载每日推荐...</div>
+                    </div>
+                </div>
+
+                <div class="batch-actions" id="batchActions" style="display:none;">
+                    <label class="select-all-wrap">
+                        <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
+                        <span>全选</span>
+                    </label>
+                    <span class="selected-count" id="selectedCount"></span>
+                    <button class="batch-btn btn-play-selected" onclick="playSelected()">▶ 播放选中</button>
+                    <button class="batch-btn btn-play-all" onclick="playAll()">▶ 全部播放</button>
+                    <button class="batch-btn btn-dl-selected" onclick="downloadSelected()">⬇ 下载选中</button>
+                    <button class="batch-btn btn-dl-all" onclick="downloadAll()">⬇ 全部下载</button>
+                </div>
+
+                <div class="track-list" id="trackList">
+                    <div class="track-header">
+                        <span>#</span>
+                        <span>歌曲名称</span>
+                        <span>歌手</span>
+                        <span class="col-source">来源</span>
+                        <span>操作</span>
+                    </div>
+                    <div class="empty-state" id="emptyState">
+                        <div class="icon">🎵</div>
+                        <p>搜索歌曲或加载热门歌曲</p>
+                    </div>
+                </div>
+
+                <div class="download-log" id="downloadLog" style="display:none;">
+                    <h3>下载记录</h3>
+                    <div id="logContent"></div>
+                </div>
+
+
+            </div>
+        </div>
+
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <audio id="audioPlayer" preload="auto"></audio>
+
+    <script>
+        const METING_APIS = [
+            'https://api.injahow.cn/meting/',
+            'https://meting.qjqq.cn',
+            'https://metingapi.vercel.app/api',
+            'https://meting.heheda.top/api',
+        ];
+
+        const NETEASE_APIS = [
+            'https://ncmapi.btwoa.com',
+            'https://api.toolkal.com',
+            'https://ncme.zhenxin.me',
+            'https://api.2leo.top',
+        ];
+
+        const KUWO_APIS = [
+            'https://kuwo.cn',
+        ];
+
+        const AUDIUS_HOSTS = [
+            'https://discoveryprovider.audius.co',
+            'https://discoveryprovider2.audius.co',
+            'https://discoveryprovider3.audius.co',
+        ];
+
+        const CORS_PROXIES = [
+            '',
+            'https://api.codetabs.com/v1/proxy?quest=',
+            'https://corsproxy.org/?',
+            'https://corsproxy.io/?',
+            'https://api.allorigins.win/raw?url=',
+        ];
+
+        const APP_NAME = 'FreeMusic';
+        const HOT_PLAYLISTS = [
+            { id: '3778678', name: '网易云音乐热歌榜' },
+            { id: '17555199078', name: '2025年度热歌TOP50' },
+            { id: '13944774213', name: '2025第二季度音乐榜' },
+            { id: '3779629', name: '抖音排行榜' },
+            { id: '2884035', name: '网易原创榜' },
+            { id: '19723756', name: '云音乐飙升榜' },
+            { id: '3778678', name: '热歌榜' },
+            { id: '71385702', name: '抖音榜' },
+        ];
+
+        const DAILY_KEYWORDS = [
+            '周杰伦', '陈奕迅', '林俊杰', '薛之谦', '邓紫棋',
+            '毛不易', '李荣浩', '华晨宇', '张学友', '王力宏',
+            'Taylor Swift', 'Ed Sheeran', 'Adele', 'Bruno Mars',
+            '五月天', '朴树', '许嵩', '李健', '赵雷',
+            '房东的猫', '陈粒', '花粥', '隔壁老樊', '任然',
+            '张韶涵', '孙燕姿', '蔡依林', '梁静茹', '刘若英',
+        ];
+
+        const SOURCE_LABELS = {
+            netease: '网易云',
+            tencent: 'QQ音乐',
+            kuwo: '酷我',
+            audius: 'Audius',
+        };
+
+        let currentSource = 'netease';
+        let tracks = [];
+        let currentTrack = null;
+        let currentTrackIndex = -1;
+        let playQueue = [];
+        let playQueueIndex = -1;
+        let playMode = 0; // 0=顺序 1=单曲循环 2=随机
+        let audiusHost = null;
+        const audio = document.getElementById('audioPlayer');
+        let playerWindow = null;
+        const playerChannel = new BroadcastChannel('freemusic_player');
+        let popupBlocked = false;
+
+        playerChannel.onmessage = (event) => {
+            const msg = event.data;
+            if (msg.type === 'cmd') {
+                if (msg.cmd === 'prev') playPrev();
+                else if (msg.cmd === 'next') playNext();
+                else if (msg.cmd === 'download') downloadCurrent();
+                else if (msg.cmd === 'ended') handleTrackEnded();
+                else if (msg.cmd === 'back') { playerWindow = null; }
+                else if (msg.cmd === 'playIndex') { playTrack(msg.index); }
+                else if (msg.cmd === 'mode') { playMode = msg.mode; }
+            }
+            if (msg.type === 'playerReady') {
+                if (currentTrack) {
+                    sendTrackToPlayer(currentTrack);
+                    sendPlaylistToPlayer();
+                }
+            }
+        };
+
+        function openPlayerWindow() {
+            if (popupBlocked) return false;
+            if (playerWindow && !playerWindow.closed) {
+                playerWindow.focus();
+                return true;
+            }
+            const w = Math.min(420, screen.width);
+            const h = Math.min(780, screen.height);
+            const left = (screen.width - w) / 2;
+            const top = (screen.height - h) / 2;
+            playerWindow = window.open('player.html', 'FreeMusicPlayer', 'width=' + w + ',height=' + h + ',left=' + left + ',top=' + top + ',scrollbars=no,resizable=yes');
+            if (!playerWindow || playerWindow.closed) {
+                popupBlocked = true;
+                return false;
+            }
+            return true;
+        }
+
+        function sendTrackToPlayer(track) {
+            if (playerWindow && !playerWindow.closed) {
+                const streamUrl = audio.src || '';
+                playerChannel.postMessage({
+                    type: 'play',
+                    track: track,
+                    url: streamUrl
+                });
+                sendPlaylistToPlayer();
+            }
+        }
+
+        function sendPlaylistToPlayer() {
+            if (playerWindow && !playerWindow.closed) {
+                playerChannel.postMessage({
+                    type: 'playlist',
+                    tracks: tracks,
+                    currentIndex: currentTrackIndex
+                });
+            }
+        }
+
+        function handleTrackEnded() {
+            // 单曲循环
+            if (playMode === 1) {
+                audio.currentTime = 0;
+                audio.play();
+                return;
+            }
+            // 随机播放
+            if (playMode === 2 && tracks.length > 1) {
+                let randIdx;
+                do { randIdx = Math.floor(Math.random() * tracks.length); } while (randIdx === currentTrackIndex);
+                playTrack(randIdx);
+                return;
+            }
+            // 顺序播放
+            if (playQueue.length > 0 && playQueueIndex < playQueue.length - 1) {
+                playQueueIndex++;
+                const idx = playQueue[playQueueIndex];
+                playTrack(idx);
+            } else if (playQueue.length > 0 && playQueueIndex >= playQueue.length - 1) {
+                playQueue = [];
+                playQueueIndex = -1;
+                if (currentTrackIndex >= 0 && currentTrackIndex < tracks.length - 1) {
+                    playTrack(currentTrackIndex + 1);
+                }
+            } else if (currentTrackIndex >= 0 && currentTrackIndex < tracks.length - 1) {
+                playTrack(currentTrackIndex + 1);
+            }
+        }
+
+        function getServerUrl() {
+            return '';
+        }
+
+        function setSource(source) {
+            currentSource = source;
+            document.querySelectorAll('.source-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.source === source);
+            });
+        }
+
+        function setStatus(msg) {
+            document.getElementById('statusBar').textContent = msg;
+        }
+
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.add('active');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('active');
+        }
+
+        function openPlayer() {
+            const ok = openPlayerWindow();
+            if (!ok) {
+                setStatus('弹窗被浏览器拦截，请在浏览器设置中允许弹出窗口，或直接在本页播放');
+            }
+        }
+
+        function closePlayer() {
+            if (playerWindow && !playerWindow.closed) {
+                playerWindow.close();
+            }
+            playerWindow = null;
+        }
+
+        async function fetchWithTimeout(url, options = {}, timeout = 10000) {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), timeout);
+            try {
+                const resp = await fetch(url, { ...options, signal: controller.signal });
+                clearTimeout(id);
+                return resp;
+            } catch (e) {
+                clearTimeout(id);
+                throw e;
+            }
+        }
+
+        async function fetchJSON(url, timeout = 10000) {
+            const resp = await fetchWithTimeout(url, {}, timeout);
+            if (!resp.ok) return null;
+            return await resp.json();
+        }
+
+        async function fetchViaProxy(targetUrl, timeout = 10000) {
+            for (const proxy of CORS_PROXIES) {
+                try {
+                    const fullUrl = proxy ? proxy + encodeURIComponent(targetUrl) : targetUrl;
+                    const data = await fetchJSON(fullUrl, timeout);
+                    if (data) return data;
+                } catch (e) {}
+            }
+            return null;
+        }
+
+        function isFragment(item) {
+            if (!item) return true;
+            if (item.freeTrialInfo !== null && item.freeTrialInfo !== undefined) return true;
+            if (item.time && item.time < 60000) return true;
+            if (item.size && item.size < 1000000) return true;
+            return false;
+        }
+
+        async function getNeteaseSongUrl(id) {
+            for (const base of NETEASE_APIS) {
+                try {
+                    const data = await fetchJSON(base + '/song/url?id=' + id + '&level=exhigh&randomCNIP=true', 10000);
+                    if (data && data.data) {
+                        const urls = Array.isArray(data.data) ? data.data : [data.data];
+                        for (const item of urls) {
+                            if (item && item.url && !isFragment(item)) return item.url;
+                        }
+                    }
+                } catch (e) {}
+            }
+            for (const base of NETEASE_APIS) {
+                try {
+                    const data = await fetchJSON(base + '/song/url/v1?id=' + id + '&level=exhigh&randomCNIP=true', 10000);
+                    if (data && data.data) {
+                        const urls = Array.isArray(data.data) ? data.data : [data.data];
+                        for (const item of urls) {
+                            if (item && item.url && !isFragment(item)) return item.url;
+                        }
+                    }
+                } catch (e) {}
+            }
+            for (const base of NETEASE_APIS) {
+                try {
+                    const data = await fetchJSON(base + '/song/url?id=' + id + '&randomCNIP=true', 10000);
+                    if (data && data.data) {
+                        const urls = Array.isArray(data.data) ? data.data : [data.data];
+                        for (const item of urls) {
+                            if (item && item.url && !isFragment(item)) return item.url;
+                        }
+                    }
+                } catch (e) {}
+            }
+            return null;
+        }
+
+        async function getNeteaseSongDetail(id) {
+            for (const base of NETEASE_APIS) {
+                try {
+                    const data = await fetchJSON(base + '/song/detail?ids=' + id, 10000);
+                    if (data && data.songs && data.songs.length > 0) {
+                        const song = data.songs[0];
+                        const al = song.al || {};
+                        return { pic: al.picUrl || '', duration: song.dt ? Math.floor(song.dt / 1000) : 0 };
+                    }
+                } catch (e) {}
+            }
+            return null;
+        }
+
+        async function getKuwoStreamUrl(rid) {
+            if (!rid.toString().startsWith('MUSIC_')) {
+                rid = 'MUSIC_' + rid;
+            }
+            const kuwoUrl = 'https://antiserver.kuwo.cn/anti.s?type=convert_url3&rid=' + rid + '&format=mp3&response=url';
+            try {
+                const data = await fetchViaProxy(kuwoUrl, 8000);
+                if (data && data.url) return data.url;
+                if (typeof data === 'string' && data.startsWith('http')) return data;
+            } catch (e) {}
+            try {
+                const resp = await fetchWithTimeout(kuwoUrl, {}, 8000);
+                if (resp.ok) {
+                    const text = await resp.text();
+                    if (text.startsWith('http')) return text;
+                    try {
+                        const d = JSON.parse(text);
+                        if (d && d.url) return d.url;
+                    } catch (e) {}
+                }
+            } catch (e) {}
+            const numericRid = rid.replace('MUSIC_', '');
+            try {
+                const playInfoUrl = 'https://www.kuwo.cn/api/v1/www/music/playInfo?mid=' + numericRid + '&type=music&httpsStatus=1';
+                const data = await fetchViaProxy(playInfoUrl, 8000);
+                if (data && data.data && data.data.url) return data.data.url;
+            } catch (e) {}
+            return null;
+        }
+
+        function parseKuwoText(text) {
+            try {
+                return JSON.parse(text);
+            } catch (e) {}
+            try {
+                const fixed = text
+                    .replace(/'/g, '"')
+                    .replace(/True/g, 'true')
+                    .replace(/False/g, 'false')
+                    .replace(/None/g, 'null')
+                    .replace(/\\x[0-9a-fA-F]{2}/g, ' ');
+                return JSON.parse(fixed);
+            } catch (e) {}
+            try {
+                const match = text.match(/"abslist"\s*:\s*\[/);
+                if (match) {
+                    const start = text.indexOf('[', match.index);
+                    let depth = 0, end = start;
+                    for (let i = start; i < text.length; i++) {
+                        if (text[i] === '[') depth++;
+                        if (text[i] === ']') depth--;
+                        if (depth === 0) { end = i + 1; break; }
+                    }
+                    const arrText = text.substring(start, end)
+                        .replace(/'/g, '"')
+                        .replace(/True/g, 'true')
+                        .replace(/False/g, 'false')
+                        .replace(/None/g, 'null');
+                    return { abslist: JSON.parse(arrText) };
+                }
+            } catch (e) {}
+            return null;
+        }
+
+        async function fetchKuwoText(url, timeout = 10000) {
+            for (const proxy of CORS_PROXIES) {
+                try {
+                    const fullUrl = proxy ? proxy + encodeURIComponent(url) : url;
+                    const resp = await fetchWithTimeout(fullUrl, {}, timeout);
+                    if (!resp.ok) continue;
+                    const text = await resp.text();
+                    if (!text || text.length < 10) continue;
+                    const data = parseKuwoText(text);
+                    if (data) return data;
+                } catch (e) {}
+            }
+            return null;
+        }
+
+        async function kuwoSearch(keyword, limit) {
+            const searchUrl = 'https://search.kuwo.cn/r.s?all=' + encodeURIComponent(keyword) + '&ft=music&pn=0&rn=' + limit + '&rformat=json&encoding=utf8';
+            try {
+                const data = await fetchKuwoText(searchUrl, 10000);
+                if (data && data.abslist && Array.isArray(data.abslist)) {
+                    return data.abslist.map(t => ({
+                        id: t.MUSICRID ? t.MUSICRID.replace('MUSIC_', '') : (t.rid || ''),
+                        title: (t.SONGNAME || t.name || '未知').replace(/&nbsp;/g, ' '),
+                        artist: (t.ARTIST || t.artist || '未知').replace(/&nbsp;/g, ' '),
+                        album: (t.ALBUM || t.album || '').replace(/&nbsp;/g, ' '),
+                        duration: t.DURATION || 0,
+                        play_count: 0,
+                        source: 'kuwo',
+                        url: '',
+                        pic: t.hts_MVPIC || t.pic || '',
+                        lrc: '',
+                    }));
+                }
+                if (data && data.list && Array.isArray(data.list)) {
+                    return data.list.map(t => ({
+                        id: (t.rid || (t.MUSICRID ? t.MUSICRID.replace('MUSIC_', '') : '')),
+                        title: (t.name || t.SONGNAME || '未知').replace(/&nbsp;/g, ' '),
+                        artist: (t.artist || t.ARTIST || '未知').replace(/&nbsp;/g, ' '),
+                        album: (t.album || t.ALBUM || '').replace(/&nbsp;/g, ' '),
+                        duration: t.duration || 0,
+                        play_count: 0,
+                        source: 'kuwo',
+                        url: '',
+                        pic: t.pic || '',
+                        lrc: '',
+                    }));
+                }
+            } catch (e) {}
+            return null;
+        }
+
+        async function getMetingUrl(server, type, id) {
+            for (const apiBase of METING_APIS) {
+                try {
+                    const url = apiBase + '?server=' + server + '&type=' + type + '&id=' + encodeURIComponent(id);
+                    const resp = await fetchWithTimeout(url, {}, 10000);
+                    if (!resp.ok) continue;
+                    const ct = resp.headers.get('Content-Type') || '';
+                    if (ct.includes('audio') || ct.includes('octet-stream')) {
+                        return { url: url, data: null };
+                    }
+                    try {
+                        const data = await resp.json();
+                        if (Array.isArray(data) && data.length > 0) {
+                            return { url: null, data: data };
+                        }
+                        if (data && data.url) {
+                            return { url: data.url, data: null };
+                        }
+                    } catch (e) {}
+                } catch (e) {}
+            }
+            return null;
+        }
+
+        async function fetchPlaylist(playlistId) {
+            for (const base of NETEASE_APIS) {
+                try {
+                    const url = base + '/playlist/track/all?id=' + playlistId + '&limit=10';
+                    const data = await fetchJSON(url, 10000);
+                    if (data && data.songs && data.songs.length > 0) {
+                        return data.songs.map(t => normalizeNetease(t));
+                    }
+                } catch (e) {}
+            }
+            for (const apiBase of METING_APIS) {
+                try {
+                    const url = apiBase + '?server=netease&type=playlist&id=' + playlistId;
+                    const data = await fetchJSON(url, 10000);
+                    if (Array.isArray(data) && data.length > 0) {
+                        return data.map(t => normalizeMeting(t, 'netease'));
+                    }
+                } catch (e) {}
+            }
+            return [];
+        }
+
+        async function metingSearch(path) {
+            const params = new URLSearchParams(path.split('?')[1]);
+            const server = params.get('server') || 'netease';
+            const query = params.get('query') || '';
+
+            if (server === 'audius') {
+                return await audiusSearch(query);
+            }
+
+            if (server === 'kuwo') {
+                const directResults = await kuwoSearch(query, 20);
+                if (directResults && directResults.length > 0) {
+                    return { tracks: directResults, total: directResults.length };
+                }
+                return { tracks: [], total: 0 };
+            }
+
+            if (server === 'netease') {
+                for (const base of NETEASE_APIS) {
+                    try {
+                        const url = base + '/cloudsearch?keywords=' + encodeURIComponent(query) + '&limit=20&type=1';
+                        const data = await fetchJSON(url, 10000);
+                        if (data) {
+                            const songs = (data.result && data.result.songs) || [];
+                            if (songs.length > 0) {
+                                const results = songs.map(t => normalizeNetease(t));
+                                return { tracks: results, total: results.length };
+                            }
+                        }
+                    } catch (e) {}
+                }
+            }
+
+            for (const apiBase of METING_APIS) {
+                try {
+                    const url = apiBase + '?server=' + server + '&type=search&id=' + encodeURIComponent(query);
+                    const data = await fetchJSON(url, 10000);
+                    if (Array.isArray(data) && data.length > 0) {
+                        const results = data.map(t => normalizeMeting(t, server));
+                        return { tracks: results, total: results.length };
+                    }
+                } catch (e) {}
+            }
+
+            return { tracks: [], total: 0 };
+        }
+
+        async function metingTrending(path) {
+            const params = new URLSearchParams(path.split('?')[1]);
+            const server = params.get('server') || 'netease';
+
+            if (server === 'audius') {
+                return await audiusTrending();
+            }
+
+            if (server === 'kuwo') {
+                const hotKeywords = ['热门歌曲', '华语热歌', '抖音热歌', '流行歌曲', '经典老歌'];
+                const keyword = hotKeywords[Math.floor(Math.random() * hotKeywords.length)];
+                const results = await kuwoSearch(keyword, 10);
+                if (results && results.length > 0) {
+                    return { tracks: results, total: results.length };
+                }
+                return { tracks: [], total: 0 };
+            }
+
+            if (server === 'netease') {
+                for (const base of NETEASE_APIS) {
+                    try {
+                        const url = base + '/playlist/track/all?id=3778678&limit=10';
+                        const data = await fetchJSON(url, 10000);
+                        if (data) {
+                            const songs = data.songs || [];
+                            if (songs.length > 0) {
+                                const results = songs.map(t => normalizeNetease(t));
+                                return { tracks: results, total: results.length };
+                            }
+                        }
+                    } catch (e) {}
+                }
+            }
+
+            for (const playlist of HOT_PLAYLISTS) {
+                for (const apiBase of METING_APIS) {
+                    try {
+                        const url = apiBase + '?server=' + server + '&type=playlist&id=' + playlist.id;
+                        const data = await fetchJSON(url, 10000);
+                        if (Array.isArray(data) && data.length > 0) {
+                            const results = data.map(t => normalizeMeting(t, server));
+                            return { tracks: results, total: results.length };
+                        }
+                    } catch (e) {}
+                }
+            }
+
+            return { tracks: [], total: 0 };
+        }
+
+        async function metingStream(path) {
+            const params = new URLSearchParams(path.split('?')[1]);
+            const server = params.get('server') || 'netease';
+            const id = params.get('id') || '';
+            const trackTitle = params.get('title') || '';
+            const trackArtist = params.get('artist') || '';
+
+            if (server === 'audius') {
+                const host = await getAudiusHost();
+                if (host) {
+                    return { url: host + '/v1/tracks/' + id + '/stream?app_name=' + APP_NAME };
+                }
+                return { url: '' };
+            }
+
+            if (server === 'kuwo') {
+                const url = await getKuwoStreamUrl(id);
+                if (url) return { url };
+                return { url: '' };
+            }
+
+            if (server === 'netease') {
+                const url = await getNeteaseSongUrl(id);
+                if (url) return { url };
+
+                for (const apiBase of METING_APIS) {
+                    try {
+                        const apiUrl = apiBase + '?server=netease&type=url&id=' + id;
+                        const data = await fetchJSON(apiUrl, 10000);
+                        if (data && data.url) return { url: data.url };
+                    } catch (e) {}
+                }
+
+                if (trackTitle) {
+                    const keyword = trackArtist ? trackArtist + ' ' + trackTitle : trackTitle;
+                    const kuwoResults = await kuwoSearch(keyword, 5);
+                    if (kuwoResults && kuwoResults.length > 0) {
+                        for (const kr of kuwoResults) {
+                            const kuwoUrl = await getKuwoStreamUrl(kr.id);
+                            if (kuwoUrl) return { url: kuwoUrl };
+                        }
+                    }
+                }
+            }
+
+            return { url: '' };
+        }
+
+        async function audiusSearch(query) {
+            const host = await getAudiusHost();
+            if (!host) return { tracks: [], total: 0 };
+            try {
+                const url = host + '/v1/tracks/search?query=' + encodeURIComponent(query) + '&limit=20&app_name=' + APP_NAME;
+                const data = await fetchJSON(url, 10000);
+                if (data && data.data) {
+                    const results = data.data.map(t => normalizeAudius(t));
+                    return { tracks: results, total: results.length };
+                }
+            } catch (e) {}
+            return { tracks: [], total: 0 };
+        }
+
+        async function audiusTrending() {
+            const host = await getAudiusHost();
+            if (!host) return { tracks: [], total: 0 };
+            try {
+                const url = host + '/v1/tracks/trending?limit=20&app_name=' + APP_NAME;
+                const data = await fetchJSON(url, 10000);
+                if (data && data.data) {
+                    const results = data.data.map(t => normalizeAudius(t));
+                    return { tracks: results, total: results.length };
+                }
+            } catch (e) {}
+            return { tracks: [], total: 0 };
+        }
+
+        async function getAudiusHost() {
+            if (audiusHost) return audiusHost;
+            for (const host of AUDIUS_HOSTS) {
+                try {
+                    const resp = await fetchWithTimeout(
+                        host + '/v1/tracks/trending?limit=1&app_name=' + APP_NAME,
+                        {}, 8000
+                    );
+                    const data = await resp.json();
+                    if (data.data) {
+                        audiusHost = host;
+                        return host;
+                    }
+                } catch (e) {}
+            }
+            return null;
+        }
+
+        function normalizeMeting(t, server) {
+            let trackId = String(t.id || '');
+
+            if (server === 'kuwo' && t.url) {
+                const match = t.url.match(/rid=(\d+)/);
+                if (match) trackId = match[1];
+            }
+            if (!trackId || trackId === 'undefined') {
+                if (t.url) {
+                    const match = t.url.match(/id=(\d+)/);
+                    if (match) trackId = match[1];
+                }
+            }
+
+            return {
+                id: trackId,
+                title: t.name || t.title || '未知',
+                artist: t.artist || t.author || '未知',
+                album: t.album || '',
+                duration: 0,
+                play_count: 0,
+                source: server,
+                url: t.url || '',
+                pic: t.pic || '',
+                lrc: t.lrc || '',
+            };
+        }
+
+        function normalizeNetease(t) {
+            const artists = t.ar || t.artists || [];
+            const artistName = artists.map(a => a.name).join('/') || '未知';
+            const album = t.al || t.album || {};
+            const albumName = (album && typeof album === 'object') ? album.name : '';
+            const albumPic = (album && typeof album === 'object') ? (album.picUrl || '') : '';
+            const dt = t.dt || t.duration || 0;
+
+            return {
+                id: String(t.id || ''),
+                title: t.name || '未知',
+                artist: artistName,
+                album: albumName || '',
+                duration: dt ? Math.floor(dt / 1000) : 0,
+                play_count: 0,
+                source: 'netease',
+                url: '',
+                pic: albumPic,
+                lrc: '',
+            };
+        }
+
+        function normalizeAudius(t) {
+            return {
+                id: t.id || '',
+                title: t.title || '未知',
+                artist: (t.user && t.user.name) || '未知',
+                album: '',
+                duration: t.duration || 0,
+                play_count: t.play_count || 0,
+                source: 'audius',
+                url: '',
+                pic: '',
+                lrc: '',
+            };
+        }
+
+        function formatTime(seconds) {
+            if (!seconds || isNaN(seconds)) return '--:--';
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return m + ':' + (s < 10 ? '0' : '') + s;
+        }
+
+        function renderTracks() {
+            const list = document.getElementById('trackList');
+            const header = list.querySelector('.track-header');
+
+            list.innerHTML = '';
+            list.appendChild(header);
+
+            document.getElementById('batchActions').style.display = tracks.length > 0 ? 'flex' : 'none';
+            document.getElementById('selectAllCheckbox').checked = false;
+            updateSelectedCount();
+
+            if (tracks.length === 0) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'empty-state';
+                emptyDiv.id = 'emptyState';
+                emptyDiv.innerHTML = '<div class="icon">🎵</div><p>没有找到歌曲</p>';
+                list.appendChild(emptyDiv);
+                return;
+            }
+
+            tracks.forEach((track, i) => {
+                const item = document.createElement('div');
+                item.className = 'track-item';
+                if (currentTrack && currentTrack.id === track.id && currentTrack.source === track.source) {
+                    item.classList.add('playing');
+                }
+
+                const sourceClass = ['netease', 'kuwo', 'audius'].includes(track.source) ? track.source : '';
+
+                item.innerHTML =
+                    '<span class="index">' + (i + 1) + '</span>' +
+                    '<span class="col-check"><input type="checkbox" class="track-checkbox" data-index="' + i + '" onchange="updateSelectedCount()"></span>' +
+                    '<span class="title">' + escapeHtml(track.title) + '</span>' +
+                    '<span class="artist">' + escapeHtml(track.artist) + '</span>' +
+                    '<span class="source-tag ' + sourceClass + '">' + (SOURCE_LABELS[track.source] || track.source) + '</span>' +
+                    '<span class="actions">' +
+                        '<button class="btn-play" onclick="playTrack(' + i + ')">▶</button>' +
+                        '<button class="btn-dl" onclick="downloadTrack(' + i + ')">⬇</button>' +
+                    '</span>';
+
+                item.addEventListener('dblclick', () => playTrack(i));
+                list.appendChild(item);
+            });
+
+            sendPlaylistToPlayer();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function doSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+
+            setStatus('正在搜索: ' + query + '...');
+            showLoading();
+
+            try {
+                const data = await metingSearch('/api/search?server=' + currentSource + '&query=' + encodeURIComponent(query));
+                tracks = data.tracks || [];
+                renderTracks();
+                setStatus('搜索完成，找到 ' + tracks.length + ' 首歌曲');
+            } catch (e) {
+                setStatus('搜索失败: ' + e.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function loadTrending() {
+            setStatus('正在加载热门歌曲...');
+            showLoading();
+
+            try {
+                const data = await metingTrending('/api/trending?server=' + currentSource);
+                tracks = data.tracks || [];
+                renderTracks();
+                setStatus('已加载 ' + tracks.length + ' 首热门歌曲');
+            } catch (e) {
+                setStatus('加载失败: ' + e.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function playTrack(index) {
+            if (index < 0 || index >= tracks.length) return;
+            const track = tracks[index];
+            currentTrack = track;
+            currentTrackIndex = index;
+
+            openPlayer();
+
+            setStatus('正在获取播放链接: ' + track.artist + ' - ' + track.title + '...');
+
+            try {
+                const data = await metingStream('/api/stream?server=' + track.source + '&id=' + track.id + '&title=' + encodeURIComponent(track.title) + '&artist=' + encodeURIComponent(track.artist));
+                const streamUrl = data.url;
+
+                if (streamUrl) {
+                    audio.src = streamUrl;
+                    audio.play().catch(e => {});
+
+                    if (playerWindow && !playerWindow.closed) {
+                        playerChannel.postMessage({
+                            type: 'play',
+                            track: track,
+                            url: streamUrl
+                        });
+                        sendPlaylistToPlayer();
+                    }
+
+                    renderTracks();
+                    setStatus('正在播放: ' + track.artist + ' - ' + track.title);
+                } else {
+                    setStatus('无法获取播放链接，该歌曲可能暂无音源');
+                    if (playerWindow && !playerWindow.closed) {
+                        playerChannel.postMessage({ type: 'status', text: '无法获取播放链接' });
+                    }
+                }
+            } catch (e) {
+                setStatus('播放失败: ' + e.message);
+                if (playerWindow && !playerWindow.closed) {
+                    playerChannel.postMessage({ type: 'status', text: '播放失败: ' + e.message });
+                }
+            }
+        }
+
+        function playPrev() {
+            if (playQueue.length > 0 && playQueueIndex > 0) {
+                playQueueIndex--;
+                playTrack(playQueue[playQueueIndex]);
+            } else if (currentTrackIndex > 0) {
+                playTrack(currentTrackIndex - 1);
+            }
+        }
+
+        function playNext() {
+            if (playQueue.length > 0 && playQueueIndex < playQueue.length - 1) {
+                playQueueIndex++;
+                playTrack(playQueue[playQueueIndex]);
+            } else if (currentTrackIndex < tracks.length - 1) {
+                playTrack(currentTrackIndex + 1);
+            }
+        }
+
+        audio.addEventListener('timeupdate', () => {});
+
+        audio.addEventListener('ended', () => {
+            handleTrackEnded();
+        });
+
+        audio.addEventListener('error', () => {
+            setStatus('播放出错，正在尝试下一首...');
+            setTimeout(() => handleTrackEnded(), 1500);
+        });
+
+        async function downloadTrack(index) {
+            if (index < 0 || index >= tracks.length) return;
+            const track = tracks[index];
+
+            setStatus('正在获取下载链接: ' + track.artist + ' - ' + track.title + '...');
+
+            try {
+                const data = await metingStream('/api/stream?server=' + track.source + '&id=' + track.id + '&title=' + encodeURIComponent(track.title) + '&artist=' + encodeURIComponent(track.artist));
+                const streamUrl = data.url;
+
+                if (streamUrl) {
+                    const a = document.createElement('a');
+                    a.href = streamUrl;
+                    a.download = track.artist + ' - ' + track.title + '.mp3';
+                    a.target = '_blank';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+
+                    addLog('✅ ' + track.artist + ' - ' + track.title, 'success');
+                    setStatus('已开始下载: ' + track.artist + ' - ' + track.title);
+                } else {
+                    addLog('❌ ' + track.artist + ' - ' + track.title + ' (无法获取链接)', 'error');
+                    setStatus('无法获取下载链接，该歌曲可能暂无音源');
+                }
+            } catch (e) {
+                addLog('❌ ' + track.artist + ' - ' + track.title + ' (' + e.message + ')', 'error');
+                setStatus('下载失败: ' + e.message);
+            }
+        }
+
+        async function downloadCurrent() {
+            if (currentTrack) {
+                const idx = tracks.findIndex(t => t.id === currentTrack.id && t.source === currentTrack.source);
+                if (idx >= 0) {
+                    downloadTrack(idx);
+                }
+            }
+        }
+
+        function getSelectedIndices() {
+            const checkboxes = document.querySelectorAll('.track-checkbox:checked');
+            return Array.from(checkboxes).map(cb => parseInt(cb.dataset.index));
+        }
+
+        function updateSelectedCount() {
+            const indices = getSelectedIndices();
+            const countEl = document.getElementById('selectedCount');
+            const selectAllCb = document.getElementById('selectAllCheckbox');
+            countEl.textContent = indices.length > 0 ? '已选 ' + indices.length + ' 首' : '';
+            if (selectAllCb) {
+                selectAllCb.checked = indices.length === tracks.length && tracks.length > 0;
+            }
+        }
+
+        function toggleSelectAll() {
+            const checked = document.getElementById('selectAllCheckbox').checked;
+            document.querySelectorAll('.track-checkbox').forEach(cb => { cb.checked = checked; });
+            updateSelectedCount();
+        }
+
+        async function playSelected() {
+            const indices = getSelectedIndices();
+            if (indices.length === 0) {
+                setStatus('请先勾选要播放的歌曲');
+                return;
+            }
+            playQueue = [...indices];
+            playQueueIndex = 0;
+            setStatus('播放选中 ' + indices.length + ' 首歌曲');
+            playTrack(indices[0]);
+        }
+
+        async function playAll() {
+            if (tracks.length === 0) {
+                setStatus('当前没有可播放的歌曲');
+                return;
+            }
+            document.querySelectorAll('.track-checkbox').forEach(cb => { cb.checked = true; });
+            updateSelectedCount();
+            playQueue = tracks.map((_, i) => i);
+            playQueueIndex = 0;
+            setStatus('全部播放 ' + tracks.length + ' 首歌曲');
+            playTrack(0);
+        }
+
+        async function downloadSelected() {
+            const indices = getSelectedIndices();
+            if (indices.length === 0) {
+                setStatus('请先勾选要下载的歌曲');
+                return;
+            }
+            setStatus('开始批量下载 ' + indices.length + ' 首歌曲...');
+            for (const idx of indices) {
+                await downloadTrack(idx);
+            }
+            setStatus('批量下载完成，共 ' + indices.length + ' 首');
+        }
+
+        async function downloadAll() {
+            if (tracks.length === 0) {
+                setStatus('当前没有可下载的歌曲');
+                return;
+            }
+            document.querySelectorAll('.track-checkbox').forEach(cb => { cb.checked = true; });
+            updateSelectedCount();
+            setStatus('开始下载全部 ' + tracks.length + ' 首歌曲...');
+            for (let i = 0; i < tracks.length; i++) {
+                await downloadTrack(i);
+            }
+            setStatus('全部下载完成，共 ' + tracks.length + ' 首');
+        }
+
+        function addLog(msg, type) {
+            const logDiv = document.getElementById('downloadLog');
+            const content = document.getElementById('logContent');
+            logDiv.style.display = 'block';
+            const item = document.createElement('div');
+            item.className = 'log-item ' + type;
+            item.textContent = msg;
+            content.appendChild(item);
+            content.scrollTop = content.scrollHeight;
+        }
+
+        function seededRandom(seed) {
+            let s = seed;
+            return function() {
+                s = (s * 9301 + 49297) % 233280;
+                return s / 233280;
+            };
+        }
+
+        function getTodaySeed() {
+            const d = new Date();
+            return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+        }
+
+        function formatDate() {
+            const d = new Date();
+            return (d.getMonth() + 1) + '月' + d.getDate() + '日';
+        }
+
+        let dailyTracks = [];
+        let dailyOffset = 0;
+
+        async function loadDailyPlaylist(forceRefresh) {
+            const grid = document.getElementById('dailyGrid');
+            const dateEl = document.getElementById('dailyDate');
+
+            dateEl.textContent = formatDate();
+
+            if (dailyTracks.length > 0 && !forceRefresh) {
+                renderDailyGrid(dailyTracks);
+                return;
+            }
+
+            if (!forceRefresh) {
+                const cached = localStorage.getItem('freemusic_daily_' + getTodaySeed());
+                if (cached) {
+                    try {
+                        dailyTracks = JSON.parse(cached);
+                        if (dailyTracks.length > 0) {
+                            renderDailyGrid(dailyTracks);
+                            return;
+                        }
+                    } catch (e) {}
+                }
+            }
+
+            grid.innerHTML = '<div class="daily-loading">正在加载每日推荐...</div>';
+
+            const seed = forceRefresh ? getTodaySeed() + (++dailyOffset) * 999 : getTodaySeed();
+            const rng = seededRandom(seed);
+
+            try {
+                const playlistIdx = Math.floor(rng() * HOT_PLAYLISTS.length);
+                const songs = await fetchPlaylist(HOT_PLAYLISTS[playlistIdx].id);
+                if (songs && songs.length > 0) {
+                    dailyTracks = songs.sort(() => rng() - 0.5).slice(0, 10);
+                }
+            } catch (e) {}
+
+            if (dailyTracks.length < 5) {
+                const shuffledKeywords = [...DAILY_KEYWORDS].sort(() => rng() - 0.5);
+                const keyword = shuffledKeywords[0];
+
+                try {
+                    const results = await searchAllSourcesFast(keyword, 15);
+                    const seenIds = new Set(dailyTracks.map(s => s.title + '|' + s.artist));
+                    for (const song of results) {
+                        const key = song.title + '|' + song.artist;
+                        if (!seenIds.has(key)) {
+                            seenIds.add(key);
+                            dailyTracks.push(song);
+                        }
+                        if (dailyTracks.length >= 10) break;
+                    }
+                } catch (e) {}
+            }
+
+            dailyTracks = dailyTracks.slice(0, 10);
+
+            if (dailyTracks.length === 0) {
+                grid.innerHTML = '<div class="daily-loading">暂无推荐，请稍后再试</div>';
+                return;
+            }
+
+            try {
+                localStorage.setItem('freemusic_daily_' + getTodaySeed(), JSON.stringify(dailyTracks));
+            } catch (e) {}
+
+            renderDailyGrid(dailyTracks);
+        }
+
+        function renderDailyGrid(songs) {
+            const grid = document.getElementById('dailyGrid');
+            grid.innerHTML = songs.map((song, i) => `
+                <div class="daily-card" onclick="playDailySong(${i})">
+                    <div class="daily-num">${i + 1}</div>
+                    <div class="daily-info">
+                        <div class="daily-song">${escHtml(song.title)}</div>
+                        <div class="daily-artist">${escHtml(song.artist)}</div>
+                    </div>
+                    <button class="daily-play-btn" onclick="event.stopPropagation();playDailySong(${i})">▶</button>
+                </div>
+            `).join('');
+        }
+
+        function playDailySong(index) {
+            if (index < 0 || index >= dailyTracks.length) return;
+            tracks = [...dailyTracks];
+            currentTrackIndex = index;
+            playTrack(index);
+        }
+
+        async function searchAllSourcesFast(keyword, limit) {
+            const results = [];
+            const seenKeys = new Set();
+            const sources = ['netease', 'kuwo'];
+
+            const promises = sources.map(async (server) => {
+                const apiBase = METING_APIS[0];
+                try {
+                    const url = apiBase + '?server=' + server + '&type=search&id=' + encodeURIComponent(keyword) + '&limit=' + limit;
+                    const data = await fetchJSON(url, 6000);
+                    if (Array.isArray(data)) {
+                        return data.map(s => ({
+                            id: s.id,
+                            title: s.name || s.title || '',
+                            artist: s.artist || s.author || '',
+                            source: server,
+                            albumPic: s.cover || s.pic || '',
+                        }));
+                    }
+                } catch (e) {}
+                return [];
+            });
+
+            const allResults = await Promise.allSettled(promises);
+            for (const r of allResults) {
+                if (r.status === 'fulfilled' && r.value) {
+                    for (const song of r.value) {
+                        const key = song.title + '|' + song.artist;
+                        if (!seenKeys.has(key)) {
+                            seenKeys.add(key);
+                            results.push(song);
+                        }
+                    }
+                }
+            }
+
+            return results;
+        }
+
+        function escHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        loadDailyPlaylist();
+
+        setTimeout(() => { loadTrending(); }, 300);
+    </script>
+</body>
+</html>
